@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IA ou Humain ?</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --accent: #818cf8;
+            --success: #4ade80;
+            --error: #f87171;
+            --text: #f8fafc;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .screen { display: none; animation: fadeIn 0.3s ease-out; }
+        .screen.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        h1 { font-size: 1.8rem; margin-bottom: 1rem; color: var(--primary); }
+        p { line-height: 1.5; font-size: 1.1rem; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 12px;
+            background: var(--card);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); }
+
+        .choice-btn {
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .question-card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .progress {
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .score-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        #feedback {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 10;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="feedback"></div>
+
+    <div id="app">
+        <div id="start-screen" class="screen active">
+            <h1>IA ou Humain ?</h1>
+            <p>Sauras-tu démasquer la machine ? <br>10 questions pour tester ton instinct.</p>
+            <button class="btn btn-primary" onclick="startGame()">Commencer le test</button>
+        </div>
+
+        <div id="quiz-screen" class="screen">
+            <div class="progress">Question <span id="current-idx">1</span> / <span id="total-questions">0</span></div>
+            <div class="question-card">
+                <p id="question-text">Chargement...</p>
+            </div>
+            <button class="btn choice-btn" onclick="checkAnswer('A')" id="btnA">Réponse A</button>
+            <button class="btn choice-btn" onclick="checkAnswer('B')" id="btnB">Réponse B</button>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <h1>Terminé !</h1>
+            <div class="score-circle">
+                <span id="final-percent">0%</span>
+                <span style="font-size: 0.7rem">de succès</span>
+            </div>
+            <p id="result-msg"></p>
+            <button class="btn btn-primary" onclick="location.reload()">Rejouer</button>
+        </div>
+    </div>
+
+    <script>
+        // --- TA CONFIGURATION ---
+        const questions = [
+            {
+                text: "1",
+                optionA: "IA",
+                optionB: "Humain",
+                correct: "B"
+            },
+            {
+                text: "2",
+                optionA: "IA",
+                optionB: "Humain",
+                correct: "B"
+            },
+            {
+                text: "3",
+                optionA: "IA",
+                optionB: "Humain",
+                correct: "A"
+            },
+            // Ajoute autant de questions que tu veux ici
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const feedback = document.getElementById('feedback');
+
+        function startGame() {
+            startScreen.classList.remove('active');
+            quizScreen.classList.add('active');
+            document.getElementById('total-questions').textContent = questions.length;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('current-idx').textContent = currentQuestionIndex + 1;
+            document.getElementById('question-text').innerHTML = q.text;
+            document.getElementById('btnA').textContent = q.optionA;
+            document.getElementById('btnB').textContent = q.optionB;
+        }
+
+        function checkAnswer(choice) {
+            const isCorrect = choice === questions[currentQuestionIndex].correct;
+            
+            if (isCorrect) {
+                score++;
+                showFeedback("Correct ! ✨", "var(--success)");
+            } else {
+                showFeedback("Raté... 🙊", "var(--error)");
+            }
+
+            currentQuestionIndex++;
+
+            setTimeout(() => {
+                if (currentQuestionIndex < questions.length) {
+                    showQuestion();
+                } else {
+                    showResults();
+                }
+            }, 800);
+        }
+
+        function showFeedback(text, color) {
+            feedback.textContent = text;
+            feedback.style.backgroundColor = color;
+            feedback.style.display = 'block';
+            setTimeout(() => { feedback.style.display = 'none'; }, 700);
+        }
+
+        function showResults() {
+            quizScreen.classList.remove('active');
+            resultScreen.classList.add('active');
+            
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('final-percent').textContent = percent + "%";
+            
+            let msg = "";
+            if(percent === 100) msg = "Super bravo";
+            else if(percent >= 70) msg = "Pas mal";
+            else if(percent >= 50) msg = "^^";
+            else msg = ";P";
+            
+            document.getElementById('result-msg').textContent = msg;
+        }
+    </script>
+</body>
+</html>
